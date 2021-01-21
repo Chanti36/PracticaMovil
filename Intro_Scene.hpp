@@ -1,11 +1,11 @@
 /*
  * INTRO SCENE
- * Copyright © 2018+ Ángel Rodríguez Ballesteros
+ * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
  * See documents/LICENSE.TXT or www.boost.org/LICENSE_1_0.txt
  *
- * angel.rodriguez@esne.edu
+ * santigil009@gmail.com
  */
 
 #ifndef INTRO_SCENE_HEADER
@@ -62,7 +62,7 @@
             {
                 state         = UNINITIALIZED;
                 suspended     = true;
-                canvas_width  =  720;
+                canvas_width  = 720;
                 canvas_height = 1280;
             }
 

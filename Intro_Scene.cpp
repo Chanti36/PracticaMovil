@@ -1,6 +1,6 @@
 /*
  * INTRO SCENE
- * Copyright © 2018+ Santiago_Gil
+ * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
  * See documents/LICENSE.TXT or www.boost.org/LICENSE_1_0.txt
@@ -9,6 +9,7 @@
  */
 
 #include "Intro_Scene.hpp"
+#include "Menu_Scene.hpp"
 #include <basics/Canvas>
 #include <basics/Director>
 
@@ -56,18 +57,16 @@ namespace example
     {
         if (!suspended)
         {
-            // Se pide si ya hay uno creado
+            //Comprobar si el canvas ya se ha creado, si no crear uno
 
             Canvas * canvas = context->get_renderer< Canvas > (ID(canvas));
-
-            // Si no se crea
 
             if (!canvas)
             {
                  canvas = Canvas::create (ID(canvas), context, {{ canvas_width, canvas_height }});
             }
 
-            // Si el canvas está listo
+            // Ya con el canvas se puede dibujar en él
 
             if (canvas)
             {
@@ -81,7 +80,7 @@ namespace example
                     (
                         { canvas_width * .5f, canvas_height * .5f },
                         { logo_texture->get_width (), logo_texture->get_height () },
-                        logo_texture. get ()
+                          logo_texture. get ()
                     );
                 }
             }
@@ -94,11 +93,9 @@ namespace example
 
         if (context)
         {
-            // Se carga un logo:
+            // Cargar el logo comprobando que vaya bien
 
             logo_texture = Texture_2D::create (0, context, "logo.png");
-
-            // Se comprueba que se haya cargado
 
             if (logo_texture)
             {
@@ -120,7 +117,7 @@ namespace example
 
         if (elapsed_seconds < 1.f)
         {
-            opacity = elapsed_seconds;// Se aumenta la opacidad del logo a medida que pasa el tiempo
+            opacity = elapsed_seconds;      //Animación fade in del logo
         }
         else
         {
@@ -133,7 +130,7 @@ namespace example
 
     void Intro_Scene::update_waiting ()
     {
-        // Se esperan dos segundos
+        // Esperar 2 segundos
 
         if (timer.get_elapsed_seconds () > 2.f)
         {
@@ -149,15 +146,15 @@ namespace example
 
         if (elapsed_seconds < .5f)
         {
-            opacity = 1.f - elapsed_seconds * 2.f;      // Se reduce la opacidad
+            opacity = 1.f - elapsed_seconds * 2.f;      //Animación fade out del logo
         }
         else
         {
-            // Cuando el faceout se ha completado, se lanza la siguiente escena:
+            // Pasar a la siguiente escena una vez ha acabado la animación
 
             state = FINISHED;
 
-            director.run_scene (shared_ptr< Scene >(new Game_Scene));
+            director.run_scene (shared_ptr< Scene >(new Menu_Scene));
         }
     }
 

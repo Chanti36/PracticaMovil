@@ -31,7 +31,9 @@ namespace example
         {ID(invader2    ),   "game-scene/invader2.png"      },
         {ID(invader3    ),   "game-scene/invader3.png"      },
         {ID(player      ),   "game-scene/player.png"        },
-        {ID(ammo        ),   "game-scene/ammo.png"          }
+        {ID(ammo        ),   "game-scene/ammo.png"          },
+        {ID(invader_ammo),   "game-scene/invaderammo.png"   }
+
     };
 
     // Pâra determinar el número de items en el array textures_data, se divide el tamaño en bytes
@@ -52,6 +54,7 @@ namespace example
         spritesize = canvas_width*.1f;
         y = spritesize*.5f;
 
+
         initialize ();
     }
 
@@ -70,20 +73,24 @@ namespace example
         x = canvas_width*.5f;
 
         invaders_dir=1;
-        invaders_speed=0.1f;
+        invaders_speed=100;
+        ammo_speed = 1000;
+
+        player_lifes=3;
 
         for(int rows=0;rows<5;rows++)                               //Posicion en Y de los invaders
         {
-            invaders_y[rows] = canvas_height-(spritesize*(0.5f+rows));
+            for(int columns =0;columns<7;columns++)                     //Posicion en X de los invaders
+            {
+                invaders[columns + (7 * rows)].invader_xpos = (((canvas_width*.5f)-(3*spritesize)) + (columns*spritesize));
+                invaders[columns + (7 * rows)].invader_ypos = (canvas_height-(spritesize*(0.5f+rows)));
+            }
         }
-        for(int columns =0;columns<7;columns++)                     //Posicion en X de los invaders
-        {
-            invaders_x[columns] = (((canvas_width*.5f)-(3*spritesize)) + (columns*spritesize));
-        }
+
 
         for(int i =0;i<35;i++)
         {
-            invader_alive[i] = true;
+            invaders[i].invader_alive = true;
         }
 
         return true;
@@ -288,6 +295,9 @@ namespace example
 
         Sprite_Handle    player_handle (new Sprite( textures[ID(player)].get()));
         Sprite_Handle    ammo_handle   (new Sprite( textures[ID(ammo)].get()));
+        Sprite_Handle    invader_ammo_handle   (new Sprite( textures[ID(ammo)].get()));
+
+
 
         spritescale = (canvas_width*.1f)/player_handle->get_height();     //Calcular la escala a la que tienen que estar los sprites en función del tamaño de la pantalla
 
@@ -299,44 +309,47 @@ namespace example
         ammo_handle->set_anchor(CENTER);
         ammo_handle->set_position({canvas_width*0.5f,canvas_height*0.5f});
         ammo_handle->set_scale(spritescale);
+        invader_ammo_handle->set_anchor(CENTER);
+        invader_ammo_handle->set_position({canvas_width*0.5f,canvas_height*0.5f});
+        invader_ammo_handle->set_scale(spritescale);
 
 
         sprites.push_back(player_handle);
         sprites.push_back(ammo_handle);
+        sprites.push_back(invader_ammo_handle);
 
-
-
-
-        for(int rows=0;rows<5;rows++)
+        //INVADERS
+        for(int rows=0;rows < 5;rows++)
         {
-            for(int columns=0;columns<7;columns++)
+            for(int columns=0;columns < 7;columns++)
             {
                 if(rows>2)
                 {
-                    invaders[(columns+1)+((rows+1)*5)] = Sprite_Handle (new Sprite(textures[ID(invader1)].get()));
+                    invaders[(columns)+(rows*7)].invaders_Sprites = Sprite_Handle (new Sprite(textures[ID(invader1)].get()));
                 }
                 else if(rows>0)
                 {
-                    invaders[(columns+1)+((rows+1)*5)] = Sprite_Handle (new Sprite(textures[ID(invader2)].get()));
+                    invaders[(columns)+(rows*7)].invaders_Sprites = Sprite_Handle (new Sprite(textures[ID(invader2)].get()));
                 }
                 else
                 {
-                    invaders[(columns+1)+((rows+1)*5)] = Sprite_Handle (new Sprite(textures[ID(invader3)].get()));
+                    invaders[(columns)+(rows*7)].invaders_Sprites = Sprite_Handle (new Sprite(textures[ID(invader3)].get()));
                 }
 
+                invaders[(columns)+(rows*7)].invaders_Sprites -> set_position({invaders[(columns)+(rows*7)].invader_xpos,invaders[(columns)+(rows*7)].invader_ypos});
+                invaders[(columns)+(rows*7)].invaders_Sprites -> set_scale(spritescale);
 
-
-                invaders[(columns+1)+((rows+1)*5)]->set_position({invaders_x[columns],invaders_y[rows]});
-                invaders[(columns+1)+((rows+1)*5)]->set_scale(spritescale);
-
-                sprites.push_back( invaders[(columns+1)+((rows+1)*5)]);
+                sprites.push_back( invaders[(columns)+(rows*7)].invaders_Sprites);
             }
         }
 
 
         // Se guardan punteros a los sprites que se van a usar frecuentemente:
-        player  = player_handle.get();
-        ammo    = ammo_handle.get();
+        player          = player_handle.get();
+        ammo            = ammo_handle.get();
+        invader_ammo    = invader_ammo_handle.get();
+
+
 
     }
 
@@ -347,6 +360,7 @@ namespace example
     {
         player->set_position({x2,y});
         ammo->set_position({canvas_width*0.5f,canvas_height+(spritesize*0.5f)});
+        invader_ammo->set_position({canvas_width*0.5f,0.f});
 
 
         gameplay = WAITING_TO_START;
@@ -356,11 +370,6 @@ namespace example
 
     void Game_Scene::start_playing ()
     {
-
-        // Se hace unitario el vector y se multiplica un el valor de velocidad para que el vector
-        // resultante tenga exactamente esa longitud:
-
-
         gameplay = PLAYING;
     }
 
@@ -375,16 +384,21 @@ namespace example
             sprite->update (time);
         }
 
-        player->set_position({x2,y});                       //Actualizar la posición del personaje
+        player->set_position({x2,y});             //Actualizar la posición del personaje
 
         if(ammo->get_position_y() <= canvas_height+(spritesize*0.5f))   // Se puede disparar unicamente cuando la bala ha salido de la pantalla
         {
-            ammo->set_position_y(ammo->get_position_y()+10);
+            ammo->set_speed_y(ammo_speed);
             canshoot=false;
         }
         else
         {
             canshoot=true;
+        }
+                                                        //Actualizar posicion de las balas enemigas
+        if(invader_ammo->get_position_y()>0)
+        {
+            invader_ammo->set_speed_y(-ammo_speed);
         }
 
         //INVADERS
@@ -400,37 +414,93 @@ namespace example
 
     void Game_Scene:: InvaderAI()   // Controlar a los invaders
     {
-
-/*        invaders[0]->set_speed_x(invaders_speed*invaders_dir);*/
-/*
-
-        //MOVIMIENTO
-        for(int i =0;i < 35;i++)
+        if(gameplay == PLAYING)                                                                         //Si el jugador ha iniciado la partida se activan
         {
+            for (int i = 0; i < 35; i++)                                                                //Movimiento en X
+            {
+                invaders[i].invaders_Sprites->set_speed_x(invaders_speed * invaders_dir);
+            }
 
-        }*/
+            for (int i = 0; i < 35; i++)                                                                //Detectar colisiones
+            {
+                if ((invaders[i].invaders_Sprites->get_position_x() - (spritesize * .5f)) <= 0  && invaders[i].invader_alive==true)
+                {
+                    invaders_dir = 1;
+                    going_down = true;
+                }
+                else if ((invaders[i].invaders_Sprites->get_position_x() + (spritesize * .5f)) >= canvas_width  && invaders[i].invader_alive==true)
+                {
+                    invaders_dir = -1;
+                    going_down = true;
+                }
+            }
 
+            if (going_down == true)                                                                     //Movimiento en Y
+            {
+                for (int i = 0; i < 35; i++)
+                {
+                    invaders[i].invaders_Sprites->set_speed_y(
+                            -invaders_speed * .1f);           //Movimiento en Y
 
+                    if (timer.get_elapsed_seconds() > 1)
+                    {
+                        going_down = false;
+                    }
+                }
+            }
 
+            if(timer.get_elapsed_seconds()>2)                                                           //Disparar
+            {
+                if(invader_ammo->get_position_y() <= 0)
+                {
+                    invader_shoot=true;
+                }
+            }
+
+            if(invader_shoot== true)
+            {
+                invader_shooting = rand() % 34;
+                if(invaders[invader_shooting].invader_alive == true)
+                {
+                    invader_ammo->set_position(invaders[invader_shooting].invaders_Sprites->get_position());
+                    invader_shoot=false;
+                }
+            }
+
+        }
     }
 
 
 
     void Game_Scene::Collisions()
     {
-        for(int i =0; i<35; i++)
-        {/*
-            if(ammo->get_position_x() < (invaders_Sprites[i]->get_position_x() + (spritesize*.5f )) &&      //Si pueden colisionar por columna
-               ammo->get_position_x() > (invaders_Sprites[i]->get_position_x() - (spritesize*.5f )))
+        for(int i =0; i<35; i++)                                                                        //Detectar colisiones
+        {
+            if(ammo->get_position_x() < (invaders[i].invaders_Sprites->get_position_x() + (spritesize*.5f )) &&
+               ammo->get_position_x() > (invaders[i].invaders_Sprites->get_position_x() - (spritesize*.5f )))
             {
-            if(ammo->get_position_y() < (invaders_Sprites[i]->get_position_y() + (spritesize*.5f)) &&       //Si colisiona en la y
-               ammo->get_position_y() > (invaders_Sprites[i]->get_position_y() - (spritesize*.5f)))
-            {
-                        *//*ammo->set_position_y(canvas_height + (spritesize*.5f));*//*
+                if(ammo->get_position_y() < (invaders[i].invaders_Sprites->get_position_y() + (spritesize*.5f)) &&
+                   ammo->get_position_y() > (invaders[i].invaders_Sprites->get_position_y() - (spritesize*.5f)))
+                {
+                    if(invaders[i].invader_alive==true)
+                    {
+                        ammo->set_position_y(canvas_height + (spritesize*.5f));
+                        sprites.remove(invaders[i].invaders_Sprites);
+                        invaders[i].invader_alive = false;
+                    }
+                }
             }
-            }*/
-
         }
 
+
+        if(invader_ammo->intersects(*player))
+        {
+            player_lifes--;
+            if(player_lifes==0)
+            {
+                                                                                                    //GAME OVER
+            }
+        }
     }
 }
+                                                                                                    //HACER QUE CUANDO NO QUEDEN ENEMIGOS SE ACABE LA PARTIDA

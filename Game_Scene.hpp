@@ -70,12 +70,14 @@
              */
             static struct   Texture_Data { Id id; const char * path; } textures_data[];
 
-            //Array Invaders
-            /*static struct   Invaders
-                    {
+            //Array con los datos necesarios para los Invaders
+            struct   Invaders
+            {
                         Sprite_Handle invaders_Sprites;
-                    }
-                    invaders[35];*/
+                        float invader_xpos,invader_ypos;
+                        bool invader_alive=true;
+            }
+            invaders[35];
 
 
             /**
@@ -94,28 +96,31 @@
             unsigned       canvas_width;                        ///< Ancho de la resolución virtual usada para dibujar.
             unsigned       canvas_height;                       ///< Alto  de la resolución virtual usada para dibujar.
 
+
             Texture_Map    textures;                            ///< Mapa  en el que se guardan shared_ptr a las texturas cargadas.
             Sprite_List    sprites;                             ///< Lista en la que se guardan shared_ptr a los sprites creados.
 
-            Texture_Handle player_texture,ammo_texture,invader1_texture,invader2_texture,invader3_texture;
+            Texture_Handle background;
+
 
             Sprite       *player;
             Sprite       *ammo;
+            Sprite       *invader_ammo;
 
-            Texture_Handle background;
-
-            Sprite_Handle invaders_Sprites [35];
-            bool invader_alive[35];
-            float invaders_x[7], invaders_y[5];
+            float spritesize, spritescale;
 
 
             float x,x2,y, touch_x, touch_x2;                //Coordenadas del jugador y donde se toca la pantalla para el movimiento
             float distance;                                 //Distancia recorrida para el movimiento
-            float spritesize, spritescale;
+            byte player_lifes;
 
+
+            float ammo_speed;
             bool canshoot;
 
             float invaders_dir, invaders_speed;
+            bool going_down, invader_shoot;
+            int invader_shooting;
 
             Timer          timer;                           //Calcular intervalos de tiempo
 

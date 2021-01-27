@@ -1,11 +1,11 @@
 /*
- * GAME SCENE
- * Copyright © 2018+ Ángel Rodríguez Ballesteros
+ * INTRO SCENE
+ * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
  * See documents/LICENSE.TXT or www.boost.org/LICENSE_1_0.txt
  *
- * angel.rodriguez@esne.edu
+ * santigil009@gmail.com
  */
 
 #ifndef GAME_SCENE_HEADER
@@ -42,6 +42,7 @@
             typedef std::map< Id, Texture_Handle >     Texture_Map;
             typedef basics::Graphics_Context::Accessor Context;
 
+
             /**
              * Representa el estado de la escena en su conjunto.
              */
@@ -60,7 +61,6 @@
                 UNINITIALIZED,
                 WAITING_TO_START,
                 PLAYING,
-                BALL_LEAVING,
             };
 
         private:
@@ -70,6 +70,14 @@
              */
             static struct   Texture_Data { Id id; const char * path; } textures_data[];
 
+            //Array Invaders
+            /*static struct   Invaders
+                    {
+                        Sprite_Handle invaders_Sprites;
+                    }
+                    invaders[35];*/
+
+
             /**
              * Número de items que hay en el array textures_data.
              */
@@ -77,14 +85,11 @@
 
         private:
 
-            static constexpr float   ball_speed = 400.f;        ///< Velocidad a la que se mueve la bola (en unideades virtuales por segundo).
-            static constexpr float player_speed = 300.f;        ///< Velocidad a la que se mueven ambos jugadores (en unideades virtuales por segundo).
-
-        private:
 
             State          state;                               ///< Estado de la escena.
             Gameplay_State gameplay;                            ///< Estado del juego cuando la escena está RUNNING.
             bool           suspended;                           ///< true cuando la escena está en segundo plano y viceversa.
+
 
             unsigned       canvas_width;                        ///< Ancho de la resolución virtual usada para dibujar.
             unsigned       canvas_height;                       ///< Alto  de la resolución virtual usada para dibujar.
@@ -92,127 +97,89 @@
             Texture_Map    textures;                            ///< Mapa  en el que se guardan shared_ptr a las texturas cargadas.
             Sprite_List    sprites;                             ///< Lista en la que se guardan shared_ptr a los sprites creados.
 
-            Sprite       * top_border;                          ///< Puntero al sprite de la lista de sprites que representa el borde superior.
-            Sprite       * bottom_border;                       ///< Puntero al sprite de la lista de sprites que representa el borde inferior.
-            Sprite       * left_player;                         ///< Puntero al sprite de la lista de sprites que representa al jugador izquierdo.
-            Sprite       * right_player;                        ///< Puntero al sprite de la lista de sprites que representa al jugador derecho.
-            Sprite       * ball;                                ///< Puntero al sprite de la lista de sprites que representa a la bola.
+            Texture_Handle player_texture,ammo_texture,invader1_texture,invader2_texture,invader3_texture;
 
-            bool           follow_target;                       ///< true si el usuario está tocando la pantalla y su player ir hacia donde toca.
-            float          user_target_y;                       ///< Coordenada Y hacia donde debe ir el player del usuario cuando este toca la pantalla.
+            Sprite       *player;
+            Sprite       *ammo;
 
-            Timer          timer;                               ///< Cronómetro usado para medir intervalos de tiempo
+            Texture_Handle background;
+
+            Sprite_Handle invaders_Sprites [35];
+            bool invader_alive[35];
+            float invaders_x[7], invaders_y[5];
+
+
+            float x,x2,y, touch_x, touch_x2;                //Coordenadas del jugador y donde se toca la pantalla para el movimiento
+            float distance;                                 //Distancia recorrida para el movimiento
+            float spritesize, spritescale;
+
+            bool canshoot;
+
+            float invaders_dir, invaders_speed;
+
+            Timer          timer;                           //Calcular intervalos de tiempo
+
 
         public:
 
-            /**
-             * Solo inicializa los atributos que deben estar inicializados la primera vez, cuando se
-             * crea la escena desde cero.
-             */
+            //Inicializa los atributos al crear la escena de 0
             Game_Scene();
 
-            /**
-             * Este método lo llama Director para conocer la resolución virtual con la que está
-             * trabajando la escena.
-             * @return Tamaño en coordenadas virtuales que está usando la escena.
-             */
+            //Resolucion virtual de la escena
             basics::Size2u get_view_size () override
             {
                 return { canvas_width, canvas_height };
             }
 
-            /**
-             * Aquí se inicializan los atributos que deben restablecerse cada vez que se inicia la escena.
-             * @return
-             */
+            //inicializa los atributos al iniciar la esccena
             bool initialize () override;
 
-            /**
-             * Este método lo invoca Director automáticamente cuando el juego pasa a segundo plano.
-             */
+            //Si pasa a segundo plano
             void suspend () override;
 
-            /**
-             * Este método lo invoca Director automáticamente cuando el juego pasa a primer plano.
-             */
+            //Vuelta a primer plano
             void resume () override;
 
-            /**
-             * Este método se invoca automáticamente una vez por fotograma cuando se acumulan
-             * eventos dirigidos a la escena.
-             */
+            //Eventos al tocar la pantalla
             void handle (basics::Event & event) override;
 
-            /**
-             * Este método se invoca automáticamente una vez por fotograma para que la escena
-             * actualize su estado.
-             */
+           //Actualizar la escena constantemente
             void update (float time) override;
 
-            /**
-             * Este método se invoca automáticamente una vez por fotograma para que la escena
-             * dibuje su contenido.
-             */
+            //Dibujar los frames
             void render (Context & context) override;
 
         private:
 
-            /**
-             * En este método se cargan las texturas (una cada fotograma para facilitar que la
-             * propia carga se pueda pausar cuando la aplicación pasa a segundo plano).
-             */
+            //Cargar las texturas / frame para poder pausarlo si se pone en segundo plano
             void load_textures ();
 
-            /**
-             * En este método se crean los sprites cuando termina la carga de texturas.
-             */
+            //Crear los sprites basados en las texturas
             void create_sprites ();
 
-            /**
-             * Se llama cada vez que se debe reiniciar el juego. En concreto la primera vez y cada
-             * vez que un jugador pierde.
-             */
+            //Reiniciar el juego
             void restart_game ();
 
-            /**
-             * Cuando se ha reiniciado el juego y el usuario toca la pantalla por primera vez se
-             * pone la bola en movimiento en una dirección al azar.
-             */
+            //Empezar a jugar
             void start_playing ();
 
-            /**
-             * Actualiza el estado del juego cuando el estado de la escena es RUNNING.
-             */
+            //Actualiza el estado del juego mientras se ejecuta
             void run_simulation (float time);
 
-            /**
-             * Controla el player izquierdo usando una inteligencia artificial muy básica.
-             */
-            void update_ai ();
 
-            /**
-             * Hace que el player derecho se mueva hacia el punto de la pantalla que toca el usuario.
-             */
-            void update_user ();
-
-            /**
-             * Comprueba las colisiones de la bola con el escenario y con los players.
-             */
-            void check_ball_collisions ();
-
-            /**
-             * Dibuja la textura con el mensaje de carga mientras el estado de la escena es LOADING.
-             * La textura con el mensaje se carga la primera para mostrar el mensaje cuanto antes.
-             * @param canvas Referencia al Canvas con el que dibujar la textura.
-             */
+            //Dibuja la textura para el estado de carga
             void render_loading (Canvas & canvas);
 
-            /**
-             * Dibuja la escena de juego cuando el estado de la escena es RUNNING.
-             * @param canvas Referencia al Canvas con el que dibujar.
-             */
+            //Dibuja la escena del juego
             void render_playfield (Canvas & canvas);
 
+            //Disparar un proyectil
+            void Shoot();
+
+            //Controlador de los invaders
+            void InvaderAI();
+
+            void Collisions();
         };
 
     }

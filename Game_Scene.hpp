@@ -103,9 +103,14 @@
             Texture_Handle background;
 
 
-            Sprite       *player;
-            Sprite       *ammo;
-            Sprite       *invader_ammo;
+            Sprite      *player;
+            Sprite      *ammo;
+            Sprite      *invader_ammo;
+            Sprite      *paused_base,*paused_presed;
+            Sprite      *win_sprite,*gameover_sprite;
+            Sprite      *playagain_base,*playagain_pressed;
+            Sprite      *exit_base,*exit_pressed;
+
 
             float spritesize, spritescale;
 
@@ -118,12 +123,16 @@
             float ammo_speed;
             bool canshoot;
 
+            bool oncanvas,paused;
+
             float invaders_dir, invaders_speed;
-            bool going_down, invader_shoot;
+            bool going_down;
             int invader_shooting;
 
             Timer          timer;                           //Calcular intervalos de tiempo
 
+            bool gameover, win, finishedmenuinteraction;
+            int defeatedinvaders;
 
         public:
 
@@ -185,6 +194,8 @@
             void InvaderAI();
 
             void Collisions();
+
+            void GameOver();
         };
 
     }

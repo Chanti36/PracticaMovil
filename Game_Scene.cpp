@@ -9,7 +9,7 @@
  */
 
 #include "Game_Scene.hpp"
-
+#include "Menu_Scene.hpp"
 #include <cstdlib>
 #include <basics/Canvas>
 #include <basics/Director>
@@ -26,13 +26,22 @@ namespace example
 
     Game_Scene::Texture_Data Game_Scene::textures_data[] =
     {
-        {ID(loading     ),   "game-scene/loading.png"       },
-        {ID(invader1    ),   "game-scene/invader1.png"      },
-        {ID(invader2    ),   "game-scene/invader2.png"      },
-        {ID(invader3    ),   "game-scene/invader3.png"      },
-        {ID(player      ),   "game-scene/player.png"        },
-        {ID(ammo        ),   "game-scene/ammo.png"          },
-        {ID(invader_ammo),   "game-scene/invaderammo.png"   }
+        {ID(loading      ),   "game-scene/loading.png"       },
+        {ID(invader1     ),   "game-scene/invader1.png"      },
+        {ID(invader2     ),   "game-scene/invader2.png"      },
+        {ID(invader3     ),   "game-scene/invader3.png"      },
+        {ID(player       ),   "game-scene/player.png"        },
+        {ID(ammo         ),   "game-scene/ammo.png"          },
+        {ID(invader_ammo ),   "game-scene/ammo_invader.png"  },
+
+        {ID(pausedbase      ),   "game-scene/pause0.png"    },
+        {ID(pausedpressed   ),   "game-scene/pause.png"     },
+        {ID(win             ),   "game-scene/win.png"       },
+        {ID(gameover        ),   "game-scene/gameover.png"  },
+        {ID(exitbase        ),   "game-scene/exit0.png"     },
+        {ID(exitpressed     ),   "game-scene/exit.png"      },
+        {ID(playagainbase   ),   "game-scene/playagain0.png"},
+        {ID(playagainpressed),   "game-scene/playagain.png" }
 
     };
 
@@ -78,19 +87,24 @@ namespace example
 
         player_lifes=3;
 
+        paused  = false;
+        oncanvas=false;
+        gameover=false;
+        win     = false;
+
         for(int rows=0;rows<5;rows++)                               //Posicion en Y de los invaders
         {
             for(int columns =0;columns<7;columns++)                     //Posicion en X de los invaders
             {
                 invaders[columns + (7 * rows)].invader_xpos = (((canvas_width*.5f)-(3*spritesize)) + (columns*spritesize));
-                invaders[columns + (7 * rows)].invader_ypos = (canvas_height-(spritesize*(0.5f+rows)));
+                invaders[columns + (7 * rows)].invader_ypos = ((canvas_height-canvas_height*.1f)-(spritesize*(0.5f+rows)));
             }
         }
 
 
-        for(int i =0;i<35;i++)
+        for(auto & invader : invaders)
         {
-            invaders[i].invader_alive = true;
+            invader.invader_alive = true;
         }
 
         return true;
@@ -128,46 +142,204 @@ namespace example
         {
             if (gameplay == WAITING_TO_START)
             {
-                start_playing ();           // Se empieza a jugar cuando el usuario toca la pantalla por primera vez
+                start_playing ();                                                                       // Se empieza a jugar cuando el usuario toca la pantalla por primera vez
             }
             else switch (event.id)
             {
-                case ID(touch-started):     // Al tocar la pantalla
+                case ID(touch-started):                                                             // Al tocar la pantalla
                 {
-                    touch_x = *event[ID(x)].as< var::Float > ();
+                    if(!finishedmenuinteraction)
+                    {
+                        if (!paused) //Si no está en pausa
+                        {
+                            if (*event[ID(x)].as<var::Float>() >(canvas_width - paused_base->get_width()) &&
+                                *event[ID(y)].as<var::Float>() > (canvas_height -(paused_base->get_height() *2)))                     //Comprobar si al pulsar coloca el dedo sobre el menu de pausa
+                            {
+                                oncanvas = true;
+                            }
+                            else
+                            {
+                                touch_x = *event[ID(x)].as<var::Float>();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(*event[ID(x)].as< var::Float>() > (playagain_base->get_position_x()-(playagain_base->get_width()*.5f)) &&            //Boton de Recrear la escena
+                           *event[ID(x)].as< var::Float>() < (playagain_base->get_position_x()+(playagain_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (playagain_base->get_position_y()-(playagain_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (playagain_base->get_position_y()+(playagain_base->get_height()*.5f)))
+                            {
+                                playagain_pressed->show();
+                                playagain_base->hide();
+                            }
+                            else
+                            {
+                                playagain_pressed->hide();
+                                playagain_base->show();
+                            }
+                        }
+                        else
+                        {
+                            playagain_pressed->hide();
+                            playagain_base->show();
+                        }
+
+                        if(*event[ID(x)].as< var::Float>() > (exit_base->get_position_x()-(exit_base->get_width()*.5f)) &&            //Salir al menu
+                           *event[ID(x)].as< var::Float>() < (exit_base->get_position_x()+(exit_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (exit_base->get_position_y()-(exit_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (exit_base->get_position_y()+(exit_base->get_height()*.5f)))
+                            {
+                                exit_pressed->show();
+                                exit_base->hide();
+                            }
+                            else
+                            {
+                                exit_pressed->hide();
+                                exit_base->show();
+                            }
+                        }
+                        else
+                        {
+                            exit_pressed->hide();
+                            exit_base->show();
+                        }
+                    }
                     break;
                 }
                 case ID(touch-moved):
                 {
-                    touch_x2 = *event[ID(x)].as< var::Float > ();
-                    distance = touch_x2 - touch_x;
-
-                    x2 = x + distance;
-
-                    if(x2>canvas_width-(spritesize*.5f))
+                    if(!finishedmenuinteraction)
                     {
-                        x2 = canvas_width-(spritesize*.5f);
+                        if(!paused)
+                        {
+                            if (!oncanvas)                                                                 //Si no ha empezado el movimiento desde el boton de pausa
+                            {
+                                touch_x2 = *event[ID(x)].as<var::Float>();
+                                distance = touch_x2 - touch_x;
+
+                                x2 = x + distance;
+
+                                if (x2 > canvas_width - (spritesize * .5f))
+                                {
+                                    x2 = canvas_width - (spritesize * .5f);
+                                }
+                                else if (x2 < (spritesize * .5f))
+                                {
+                                    x2 = (spritesize * .5f);
+                                }
+                            }
+                        }
                     }
-                    else if(x2<(spritesize*.5f))
+                    else
                     {
-                        x2 = (spritesize*.5f);
+                        if(*event[ID(x)].as< var::Float>() > (playagain_base->get_position_x()-(playagain_base->get_width()*.5f)) &&            //Boton de Recrear la escena
+                           *event[ID(x)].as< var::Float>() < (playagain_base->get_position_x()+(playagain_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (playagain_base->get_position_y()-(playagain_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (playagain_base->get_position_y()+(playagain_base->get_height()*.5f)))
+                            {
+                                playagain_pressed->show();
+                                playagain_base->hide();
+                            }
+                            else
+                            {
+                                playagain_pressed->hide();
+                                playagain_base->show();
+                            }
+                        }
+                        else
+                        {
+                            playagain_pressed->hide();
+                            playagain_base->show();
+                        }
+
+                        if(*event[ID(x)].as< var::Float>() > (exit_base->get_position_x()-(exit_base->get_width()*.5f)) &&            //Salir al menu
+                           *event[ID(x)].as< var::Float>() < (exit_base->get_position_x()+(exit_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (exit_base->get_position_y()-(exit_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (exit_base->get_position_y()+(exit_base->get_height()*.5f)))
+                            {
+                                exit_pressed->show();
+                                exit_base->hide();
+                            }
+                            else
+                            {
+                                exit_pressed->hide();
+                                exit_base->show();
+                            }
+                        }
+                        else
+                        {
+                            exit_pressed->hide();
+                            exit_base->show();
+                        }
                     }
 
                     break;
                 }
-                case ID(touch-ended):       // Al dejar de tocar la pantalla
-                {
-                    x = x2;
 
-                    if(std::abs( *event[ID(x)].as< var::Float>()    -   touch_x) <   .1f)
+                case ID(touch-ended):                                                               // Al dejar de tocar la pantalla
+                {
+                    if(!finishedmenuinteraction)
                     {
-                        if(canshoot)
+                        if (paused)
                         {
-                            Shoot();
-                            canshoot    =   false;
+                            if (*event[ID(x)].as<var::Float>() >(canvas_width - paused_base->get_width()) &&
+                                *event[ID(y)].as<var::Float>() > (canvas_height -(paused_base->get_height()*2)))       //Si al soltar el dedo todavía lo hace en el boton de pausa
+                            {
+                                paused = false;
+                            }
+                        }
+                        else
+                        {
+                            if (oncanvas)
+                            {
+                                if (*event[ID(x)].as<var::Float>() > (canvas_width - paused_base->get_width()) &&
+                                    *event[ID(y)].as<var::Float>() > (canvas_height -(paused_base->get_height() *2)))   //Si al soltar el dedo todavía lo hace en el boton de pausa
+                                {
+                                    oncanvas = false;
+                                    paused = true;
+                                }
+                            }
+                            else                                                                            //Si no ha tocado el menu de pausa
+                            {
+                                x = x2;
+
+                                if (std::abs(*event[ID(x)].as<var::Float>() - touch_x) < 1)
+                                {
+                                    if (canshoot)
+                                    {
+                                        Shoot();
+                                        canshoot = false;
+                                    }
+                                }
+                            }
                         }
                     }
-
+                    else
+                    {
+                        if(*event[ID(x)].as< var::Float>() > (playagain_base->get_position_x()-(playagain_base->get_width()*.5f)) &&            //Boton de Recrear la escena
+                           *event[ID(x)].as< var::Float>() < (playagain_base->get_position_x()+(playagain_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (playagain_base->get_position_y()-(playagain_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (playagain_base->get_position_y()+(playagain_base->get_height()*.5f)))
+                            {
+                                director.run_scene (shared_ptr< Scene >(new Game_Scene));
+                            }
+                        }
+                        if(*event[ID(x)].as< var::Float>() > (exit_base->get_position_x()-(exit_base->get_width()*.5f)) &&            //Salir al menu
+                           *event[ID(x)].as< var::Float>() < (exit_base->get_position_x()+(exit_base->get_width()*.5f)))
+                        {
+                            if(*event[ID(y)].as< var::Float>() > (exit_base->get_position_y()-(exit_base->get_height()*.5f)) &&
+                               *event[ID(y)].as< var::Float>() < (exit_base->get_position_y()+(exit_base->get_height()*.5f)))
+                            {
+                                director.run_scene (shared_ptr< Scene >(new Menu_Scene));
+                            }
+                        }
+                    }
                     break;
                 }
             }
@@ -212,16 +384,6 @@ namespace example
     void Game_Scene::render_loading (Canvas & canvas)
     {
         Texture_2D * loading_texture = textures[ID(loading)].get ();
-
-        if (loading_texture)
-        {
-            canvas.fill_rectangle
-                    (
-                            { canvas_width * .5f, canvas_height * .5f },
-                            { loading_texture->get_width (), loading_texture->get_height () },
-                            loading_texture
-                    );
-        }
     }
 
     // Simplemente se dibujan todos los sprites que conforman la escena.
@@ -233,6 +395,16 @@ namespace example
             canvas.fill_rectangle({canvas_width*.5f,canvas_height*.5f}, {720,1820}, background.get());
         }
 
+        if(paused)
+        {
+            paused_base->hide();
+            paused_presed->show();
+        }
+        else
+        {
+            paused_presed->hide();
+            paused_base->show();
+        }
 
         for (auto & sprite : sprites)
         {
@@ -244,11 +416,8 @@ namespace example
     // ---------------------------------------------------------------------------------------------
     //Cargar las texturas / fotograma para poder parar la carga, que se realiza una vez iniciada la escena para mostrar el mensaje de carga
 
-
     void Game_Scene::load_textures ()
     {
-
-
             //Cargar y subir al contexto gráfico las texturas
 
             Graphics_Context::Accessor context = director.lock_graphics_context ();
@@ -263,7 +432,7 @@ namespace example
                     background = Texture_2D::create(ID(bg),context,"game-scene/background.png");
                     context->add(background);
                 }
-
+                
                 // Se carga la siguiente textura (textures.size() indica cuántas llevamos cargadas):
 
                 Texture_Data   & texture_data = textures_data[textures.size ()];
@@ -276,7 +445,6 @@ namespace example
                 //Una vez cargadas las texturas pasar a crear los sprites
             }
         }
-        else
         if (timer.get_elapsed_seconds () > 1.f)         //Dar 1s de tiempo al mensaje de carga aunque las texturas se hayan cargado antes
         {
             create_sprites ();
@@ -293,30 +461,73 @@ namespace example
         // Se crean y configuran los sprites:
 
 
-        Sprite_Handle    player_handle (new Sprite( textures[ID(player)].get()));
-        Sprite_Handle    ammo_handle   (new Sprite( textures[ID(ammo)].get()));
-        Sprite_Handle    invader_ammo_handle   (new Sprite( textures[ID(ammo)].get()));
+        Sprite_Handle    player_handle          (new Sprite( textures[ID(player)        ].get()));
+        Sprite_Handle    ammo_handle            (new Sprite( textures[ID(ammo)          ].get()));
+        Sprite_Handle    invader_ammo_handle    (new Sprite( textures[ID(invader_ammo)  ].get()));
 
+        Sprite_Handle    paused_base_handle     (new Sprite( textures[ID(pausedbase)        ].get()));
+        Sprite_Handle    paused_pressed_handle  (new Sprite( textures[ID(pausedpressed)     ].get()));
+        Sprite_Handle    win_handle             (new Sprite( textures[ID(win)               ].get()));
+        Sprite_Handle    gameover_handle        (new Sprite( textures[ID(gameover)          ].get()));
+        Sprite_Handle    playagain_base_handle  (new Sprite( textures[ID(playagainbase)     ].get()));
+        Sprite_Handle    playagain_pressed_handle(new Sprite( textures[ID(playagainpressed) ].get()));
+        Sprite_Handle    exit_base_handle       (new Sprite( textures[ID(exitbase)          ].get()));
+        Sprite_Handle    exit_pressed_handle    (new Sprite( textures[ID(exitpressed)       ].get()));
 
 
         spritescale = (canvas_width*.1f)/player_handle->get_height();     //Calcular la escala a la que tienen que estar los sprites en función del tamaño de la pantalla
 
-
-
-        player_handle->set_anchor(CENTER);
+        player_handle->set_anchor(CENTER);                                                  //JUGADOR
         player_handle->set_position({canvas_width*0.5f,canvas_height*0.5f});
         player_handle->set_scale(spritescale);
-        ammo_handle->set_anchor(CENTER);
+        ammo_handle->set_anchor(CENTER);                                                    //AMMO
         ammo_handle->set_position({canvas_width*0.5f,canvas_height*0.5f});
         ammo_handle->set_scale(spritescale);
-        invader_ammo_handle->set_anchor(CENTER);
+        invader_ammo_handle->set_anchor(CENTER);                                            //INVADERAMMO
         invader_ammo_handle->set_position({canvas_width*0.5f,canvas_height*0.5f});
         invader_ammo_handle->set_scale(spritescale);
+
+        paused_base_handle->set_position    ({canvas_width-(paused_base_handle->get_width()*.5f), canvas_height-canvas_height*.1f});
+        paused_pressed_handle->set_position ({canvas_width-(paused_base_handle->get_width()*.5f), canvas_height-canvas_height*.1f});
+        win_handle->set_position            ({canvas_width*.5f, canvas_height*.75f});
+        gameover_handle->set_position       ({canvas_width*.5f, canvas_height*.75f});
+        playagain_base_handle->set_position ({canvas_width*.5f, canvas_height*.5f});
+        playagain_base_handle->set_scale(.75f);
+        playagain_pressed_handle->set_position     ({canvas_width*.5f, canvas_height*.5f});
+        playagain_pressed_handle->set_scale(.75f);
+        exit_base_handle->set_position      ({canvas_width*.5f, canvas_height*.5f - playagain_pressed_handle->get_height()});
+        exit_base_handle->set_scale(.75f);
+        exit_pressed_handle->set_position   ({canvas_width*.5f, canvas_height*.5f - playagain_pressed_handle->get_height()});
+        exit_pressed_handle->set_scale(.75f);
 
 
         sprites.push_back(player_handle);
         sprites.push_back(ammo_handle);
         sprites.push_back(invader_ammo_handle);
+
+        sprites.push_back(paused_base_handle);
+        sprites.push_back(paused_pressed_handle);
+        sprites.push_back(win_handle);
+        sprites.push_back(gameover_handle);
+        sprites.push_back(playagain_base_handle);
+        sprites.push_back(playagain_pressed_handle);
+        sprites.push_back(exit_base_handle);
+        sprites.push_back(exit_pressed_handle);
+
+
+        // Se guardan punteros a los sprites que se van a usar frecuentemente:
+        player          = player_handle.get();
+        ammo            = ammo_handle.get();
+        invader_ammo    = invader_ammo_handle.get();
+
+        paused_base     = paused_base_handle.get();
+        paused_presed   = paused_pressed_handle.get();
+        win_sprite = win_handle.get();
+        gameover_sprite = gameover_handle.get();
+        playagain_base = playagain_base_handle.get();
+        playagain_pressed = playagain_pressed_handle.get();
+        exit_base = exit_base_handle.get();
+        exit_pressed = exit_pressed_handle.get();
 
         //INVADERS
         for(int rows=0;rows < 5;rows++)
@@ -342,15 +553,6 @@ namespace example
                 sprites.push_back( invaders[(columns)+(rows*7)].invaders_Sprites);
             }
         }
-
-
-        // Se guardan punteros a los sprites que se van a usar frecuentemente:
-        player          = player_handle.get();
-        ammo            = ammo_handle.get();
-        invader_ammo    = invader_ammo_handle.get();
-
-
-
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -377,33 +579,45 @@ namespace example
 
     void Game_Scene::run_simulation (float time)
     {
-        // Se actualiza el estado de todos los sprites:
-
-        for (auto & sprite : sprites)
+        for(auto & invader : invaders)
         {
-            sprite->update (time);
+            if(!invader.invader_alive)
+            {
+                invader.invaders_Sprites->hide();
+            }
         }
-
-        player->set_position({x2,y});             //Actualizar la posición del personaje
-
-        if(ammo->get_position_y() <= canvas_height+(spritesize*0.5f))   // Se puede disparar unicamente cuando la bala ha salido de la pantalla
+        if(!paused && !win && !gameover)
         {
-            ammo->set_speed_y(ammo_speed);
-            canshoot=false;
-        }
-        else
-        {
-            canshoot=true;
-        }
-                                                        //Actualizar posicion de las balas enemigas
-        if(invader_ammo->get_position_y()>0)
-        {
-            invader_ammo->set_speed_y(-ammo_speed);
-        }
 
-        //INVADERS
-        Collisions();
-        InvaderAI();
+            // Se actualiza el estado de todos los sprites:
+
+            for (auto &sprite : sprites) {
+                sprite->update(time);
+            }
+
+            player->set_position({x2, y});             //Actualizar la posición del personaje
+
+            if (ammo->get_position_y() <= canvas_height + (spritesize *
+                                                           0.5f))   // Se puede disparar unicamente cuando la bala ha salido de la pantalla
+            {
+                ammo->set_speed_y(ammo_speed);
+                canshoot = false;
+            }
+            else
+            {
+                canshoot = true;
+            }
+            //Actualizar posicion de las balas enemigas
+            if (invader_ammo->get_position_y() > 0) {
+                invader_ammo->set_speed_y(-ammo_speed);
+            }
+
+            //INVADERS
+            Collisions();
+            InvaderAI();
+
+            GameOver();
+        }
     }
 
 
@@ -416,31 +630,36 @@ namespace example
     {
         if(gameplay == PLAYING)                                                                         //Si el jugador ha iniciado la partida se activan
         {
-            for (int i = 0; i < 35; i++)                                                                //Movimiento en X
+            for (auto & invader : invaders)                                                                //Detectar colisiones
             {
-                invaders[i].invaders_Sprites->set_speed_x(invaders_speed * invaders_dir);
-            }
+                invader.invaders_Sprites->set_speed_x(invaders_speed * invaders_dir);
 
-            for (int i = 0; i < 35; i++)                                                                //Detectar colisiones
-            {
-                if ((invaders[i].invaders_Sprites->get_position_x() - (spritesize * .5f)) <= 0  && invaders[i].invader_alive==true)
+                if ((invader.invaders_Sprites->get_position_x() - (spritesize * .5f)) <= 0 &&
+                    invader.invader_alive)
                 {
                     invaders_dir = 1;
                     going_down = true;
                 }
-                else if ((invaders[i].invaders_Sprites->get_position_x() + (spritesize * .5f)) >= canvas_width  && invaders[i].invader_alive==true)
+                else if ((invader.invaders_Sprites->get_position_x() + (spritesize * .5f)) >= canvas_width  &&
+                invader.invader_alive)
                 {
                     invaders_dir = -1;
                     going_down = true;
                 }
+
+                if((invader.invaders_Sprites->get_position_y() - (spritesize * .5f)) < (player->get_position_y()+ (spritesize * .5f))
+                && invader.invader_alive)                                                                                             //Fin del juego cuando llegan hasta el jugador
+                {
+                    gameover= true;
+                }
             }
 
-            if (going_down == true)                                                                     //Movimiento en Y
+            if (going_down)                                                                     //Movimiento en Y de los invaders
             {
-                for (int i = 0; i < 35; i++)
+                for (auto & invader : invaders)
                 {
-                    invaders[i].invaders_Sprites->set_speed_y(
-                            -invaders_speed * .1f);           //Movimiento en Y
+                    invader.invaders_Sprites->set_speed_y(
+                            -invaders_speed * .1f);
 
                     if (timer.get_elapsed_seconds() > 1)
                     {
@@ -449,24 +668,18 @@ namespace example
                 }
             }
 
-            if(timer.get_elapsed_seconds()>2)                                                           //Disparar
+            if(timer.get_elapsed_seconds()>2)                                                           //Disparos de los invaders
             {
                 if(invader_ammo->get_position_y() <= 0)
                 {
-                    invader_shoot=true;
+                    invader_shooting = rand() % 35;
+
+                    if(invaders[invader_shooting].invader_alive)
+                    {
+                        invader_ammo->set_position(invaders[invader_shooting].invaders_Sprites->get_position());
+                    }
                 }
             }
-
-            if(invader_shoot== true)
-            {
-                invader_shooting = rand() % 34;
-                if(invaders[invader_shooting].invader_alive == true)
-                {
-                    invader_ammo->set_position(invaders[invader_shooting].invaders_Sprites->get_position());
-                    invader_shoot=false;
-                }
-            }
-
         }
     }
 
@@ -474,33 +687,94 @@ namespace example
 
     void Game_Scene::Collisions()
     {
-        for(int i =0; i<35; i++)                                                                        //Detectar colisiones
+        for(auto & invader : invaders)                                                                        //Detectar colisiones
         {
-            if(ammo->get_position_x() < (invaders[i].invaders_Sprites->get_position_x() + (spritesize*.5f )) &&
-               ammo->get_position_x() > (invaders[i].invaders_Sprites->get_position_x() - (spritesize*.5f )))
+            if(ammo->get_position_x() < (invader.invaders_Sprites->get_position_x() + (spritesize*.5f )) &&
+               ammo->get_position_x() > (invader.invaders_Sprites->get_position_x() - (spritesize*.5f )))
             {
-                if(ammo->get_position_y() < (invaders[i].invaders_Sprites->get_position_y() + (spritesize*.5f)) &&
-                   ammo->get_position_y() > (invaders[i].invaders_Sprites->get_position_y() - (spritesize*.5f)))
+                if(ammo->get_position_y() < (invader.invaders_Sprites->get_position_y() + (spritesize*.5f)) &&
+                   ammo->get_position_y() > (invader.invaders_Sprites->get_position_y() - (spritesize*.5f)))
                 {
-                    if(invaders[i].invader_alive==true)
+                    if(invader.invader_alive)
                     {
                         ammo->set_position_y(canvas_height + (spritesize*.5f));
-                        sprites.remove(invaders[i].invaders_Sprites);
-                        invaders[i].invader_alive = false;
+                        invader.invader_alive = false;
                     }
                 }
             }
         }
 
 
-        if(invader_ammo->intersects(*player))
+        if(invader_ammo->get_position_y() < player->get_position_y() + (spritesize*.5f) &&
+           invader_ammo->get_position_y() > player->get_position_y() - (spritesize*.5f))
         {
-            player_lifes--;
-            if(player_lifes==0)
+            if(invader_ammo->get_position_x() < player->get_position_x() + (spritesize*.5f) &&
+               invader_ammo->get_position_x() > player->get_position_x() - (spritesize*.5f))
             {
-                                                                                                    //GAME OVER
+                player_lifes--;
+                invader_ammo->set_position_y(0);
             }
         }
     }
+
+    void Game_Scene::GameOver()
+    {
+        for(auto & invader : invaders)                                                                    //Comprobar que todos los enemigos han sido derrotados
+        {
+            if (!invader.invader_alive)
+            {
+                defeatedinvaders++;
+            }
+            else
+            {
+                defeatedinvaders=0;
+            }
+
+            if(defeatedinvaders>=35)
+            {
+                win=true;
+            }
+        }
+
+        if(player_lifes<=0)
+        {
+            gameover=true;
+        }
+
+        if(win)
+        {
+            win_sprite->show();
+            gameover_sprite->hide();
+
+            if(timer.get_elapsed_seconds()>1)
+            {
+                finishedmenuinteraction=true;
+            }
+            invader_ammo->set_position_y(-spritesize);
+        }
+        else if(gameover)
+        {
+            for(auto & invader : invaders)
+            {
+                invader.invader_alive=false;
+            }
+            win_sprite->hide();
+            gameover_sprite->show();
+
+            if(timer.get_elapsed_seconds()>1)
+            {
+                finishedmenuinteraction=true;
+            }
+            invader_ammo->set_position_y(-spritesize);
+        }
+        else
+        {
+            win_sprite->hide();
+            gameover_sprite->hide();
+            playagain_base->hide();
+            playagain_pressed->hide();
+            exit_base->hide();
+            exit_pressed->hide();
+        }
+    }
 }
-                                                                                                    //HACER QUE CUANDO NO QUEDEN ENEMIGOS SE ACABE LA PARTIDA

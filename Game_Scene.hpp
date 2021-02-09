@@ -1,5 +1,5 @@
 /*
- * INTRO SCENE
+ * GAME SCENE
  * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
@@ -34,8 +34,6 @@
         class Game_Scene : public basics::Scene
         {
 
-            // Estos typedefs pueden ayudar a hacer el código más compacto y claro:
-
             typedef std::shared_ptr < Sprite     >     Sprite_Handle;
             typedef std::list< Sprite_Handle     >     Sprite_List;
             typedef std::shared_ptr< Texture_2D  >     Texture_Handle;
@@ -43,9 +41,7 @@
             typedef basics::Graphics_Context::Accessor Context;
 
 
-            /**
-             * Representa el estado de la escena en su conjunto.
-             */
+            //Estados de la escena
             enum State
             {
                 LOADING,
@@ -53,9 +49,7 @@
                 ERROR
             };
 
-            /**
-             * Representa el estado del juego cuando el estado de la escena es RUNNING.
-             */
+           //Subestados de la escena en Running
             enum Gameplay_State
             {
                 UNINITIALIZED,
@@ -65,45 +59,40 @@
 
         private:
 
-            /**
-             * Array de estructuras con la información de las texturas (Id y ruta) que hay que cargar.
-             */
+            //Info de las texturas que hay que cargar
             static struct   Texture_Data { Id id; const char * path; } textures_data[];
 
             //Array con los datos necesarios para los Invaders
             struct   Invaders
             {
-                        Sprite_Handle invaders_Sprites;
-                        float invader_xpos,invader_ypos;
-                        bool invader_alive=true;
-            }
-            invaders[35];
+                Sprite_Handle invaders_Sprites;
+                float invader_xpos,invader_ypos;
+                bool invader_alive=true;
+            }invaders[35];
 
 
-            /**
-             * Número de items que hay en el array textures_data.
-             */
-            static unsigned textures_count;
+
+            static unsigned textures_count;                     //Numero de items del array textures_data
 
         private:
 
 
-            State          state;                               ///< Estado de la escena.
-            Gameplay_State gameplay;                            ///< Estado del juego cuando la escena está RUNNING.
-            bool           suspended;                           ///< true cuando la escena está en segundo plano y viceversa.
+            State          state;                               // Estado de la escena.
+            Gameplay_State gameplay;                            //Subestado de la escena en Running
+            bool           suspended;                           //Bool para cuando está en segundo plano
 
 
-            unsigned       canvas_width;                        ///< Ancho de la resolución virtual usada para dibujar.
-            unsigned       canvas_height;                       ///< Alto  de la resolución virtual usada para dibujar.
+            unsigned       canvas_width;                        //Ancho del canvas
+            unsigned       canvas_height;                       //Alto del canvas
 
 
-            Texture_Map    textures;                            ///< Mapa  en el que se guardan shared_ptr a las texturas cargadas.
-            Sprite_List    sprites;                             ///< Lista en la que se guardan shared_ptr a los sprites creados.
+            Texture_Map    textures;                            // Mapa  en el que se guardan shared_ptr a las texturas cargadas.
+            Sprite_List    sprites;                             // Lista en la que se guardan shared_ptr a los sprites creados.
 
-            Texture_Handle background;
+            Texture_Handle background;                          //Texturas
+            Texture_Handle life;
 
-
-            Sprite      *player;
+            Sprite      *player;                                //Punteros a los sprites
             Sprite      *ammo;
             Sprite      *invader_ammo;
             Sprite      *paused_base,*paused_presed;
@@ -112,27 +101,27 @@
             Sprite      *exit_base,*exit_pressed;
 
 
-            float spritesize, spritescale;
+            float spritesize, spritescale;                      //tamaño y escala de los sprites para que se ajusten al tamaño de pantalla
 
 
             float x,x2,y, touch_x, touch_x2;                //Coordenadas del jugador y donde se toca la pantalla para el movimiento
             float distance;                                 //Distancia recorrida para el movimiento
-            byte player_lifes;
+            byte player_lifes;                              //Vidas del jugador
+            float ammo_speed;                               //Velocidad de las balas
+            bool canshoot;                                  //Determina si el jugador puede disparar o no
 
 
-            float ammo_speed;
-            bool canshoot;
+            float invaders_dir, invaders_speed;             //Direccion / Velocidad de los invaders
+            bool going_down;                                //Determina si los invaders se mueven en Y
+            int invader_shooting;                           //Determina el invader que dispara
 
-            bool oncanvas,paused;
 
-            float invaders_dir, invaders_speed;
-            bool going_down;
-            int invader_shooting;
+            bool oncanvas,paused;                           //Determinar si el jugador toca el boton de pausa y si el juego entra en pausa
+            bool gameover, win, finishedmenuinteraction;    //Determinar el estado de la escena al finalizar la partida
+            int defeatedinvaders;                           //Numero de invaders derrotados
+
 
             Timer          timer;                           //Calcular intervalos de tiempo
-
-            bool gameover, win, finishedmenuinteraction;
-            int defeatedinvaders;
 
         public:
 
@@ -193,8 +182,10 @@
             //Controlador de los invaders
             void InvaderAI();
 
+            //Controlador de las colisiones
             void Collisions();
 
+            //Controlador del final de la partida
             void GameOver();
         };
 

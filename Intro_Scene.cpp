@@ -57,7 +57,7 @@ namespace example
     {
         if (!suspended)
         {
-            //Comprobar si el canvas ya se ha creado, si no crear uno
+            //Si no hay canvas crear uno
 
             Canvas * canvas = context->get_renderer< Canvas > (ID(canvas));
 

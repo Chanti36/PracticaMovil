@@ -1,11 +1,11 @@
 /*
  * MENU SCENE
- * Copyright © 2018+ Ángel Rodríguez Ballesteros
+ * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
  * See documents/LICENSE.TXT or www.boost.org/LICENSE_1_0.txt
  *
- * angel.rodriguez@esne.edu
+ * santigil009@gmail.com
  */
 
 #include "Menu_Scene.hpp"
@@ -24,20 +24,25 @@ namespace example
     {
         state         = LOADING;
         suspended     = true;
-        canvas_width  =  720;
-        canvas_height =  1280;
 
+        canvas_width = 720;
+        canvas_height = 1280;
+        bottomover=0;
     }
 
     // ---------------------------------------------------------------------------------------------
 
     bool Menu_Scene::initialize ()
     {
+        oncredits=false;
+        onhelp   =false;
 
         return true;
     }
 
     // ---------------------------------------------------------------------------------------------
+
+
 
     void Menu_Scene::handle (basics::Event & event)
     {
@@ -53,8 +58,41 @@ namespace example
                     Point2f touch_location = { *event[ID(x)].as< var::Float > (), *event[ID(y)].as< var::Float > () };
 
 
-                    // Solo se puede tocar una opción a la vez (para evitar selecciones múltiples),
-                    // por lo que solo una se considera presionada (el resto se "sueltan"):
+                    //PLAY
+                    if(touch_location.coordinates.y() < playpos + (play_base->get_height()*.5f) &&
+                       touch_location.coordinates.y() > playpos - (play_base->get_height()*.5f))
+                    {
+                        if(touch_location.coordinates.x() < canvas_width*.5f + (play_base->get_width()*.5f) &&
+                           touch_location.coordinates.x() > canvas_width*.5f - (play_base->get_width()*.5f))
+                        {
+                            bottomover=1;
+                        }
+                    }
+                    //HELP
+                    else if(touch_location.coordinates.y() < helppos + (help_base->get_height()*.5f) &&
+                            touch_location.coordinates.y() > helppos - (help_base->get_height()*.5f))
+                    {
+                        if(touch_location.coordinates.x() < canvas_width*.5f + (help_base->get_width()*.5f) &&
+                           touch_location.coordinates.x() > canvas_width*.5f - (help_base->get_width()*.5f))
+                        {
+                            bottomover=2;
+                        }
+                    }
+                    //CREDITS
+                    else if(touch_location.coordinates.y() < creditspos+ (credits_base->get_height()*.5f) &&
+                       touch_location.coordinates.y() > creditspos - (credits_base->get_height()*.5f))
+                    {
+                        if(touch_location.coordinates.x() < canvas_width*.5f + (credits_base->get_width()*.5f) &&
+                           touch_location.coordinates.x() > canvas_width*.5f - (credits_base->get_width()*.5f))
+                        {
+                            bottomover=3;
+                        }
+                    }
+                    else
+                    {
+                        bottomover=0;
+                    }
+
 
 
                     break;
@@ -64,10 +102,44 @@ namespace example
                 {
                     Point2f touch_ended_location = { *event[ID(x)].as< var::Float > (), *event[ID(y)].as< var::Float > () };
 
-                    x = *event[ID(x)].as< var::Float > ();
-                    y = *event[ID(y)].as< var::Float > ();
-
-                    director.run_scene (shared_ptr< Scene >(new Game_Scene));
+                    if(oncredits==false && onhelp==false)
+                    {
+                        //PLAY
+                        if(touch_ended_location.coordinates.y() < playpos + (play_base->get_height()*.5f) &&
+                           touch_ended_location.coordinates.y() > playpos - (play_base->get_height()*.5f))
+                        {
+                            if(touch_ended_location.coordinates.x() < canvas_width*.5f + (play_base->get_width()*.5f) &&
+                               touch_ended_location.coordinates.x() > canvas_width*.5f - (play_base->get_width()*.5f))
+                            {
+                                director.run_scene (shared_ptr< Scene >(new Game_Scene));
+                            }
+                        }
+                        //HELP
+                        if(touch_ended_location.coordinates.y() < helppos + (help_base->get_height()*.5f) &&
+                           touch_ended_location.coordinates.y() > helppos - (help_base->get_height()*.5f))
+                        {
+                            if(touch_ended_location.coordinates.x() < canvas_width*.5f + (help_base->get_width()*.5f) &&
+                               touch_ended_location.coordinates.x() > canvas_width*.5f - (help_base->get_width()*.5f))
+                            {
+                                onhelp=true;
+                            }
+                        }
+                        //CREDITS
+                        if(touch_ended_location.coordinates.y() < creditspos+ (credits_base->get_height()*.5f) &&
+                           touch_ended_location.coordinates.y() > creditspos - (credits_base->get_height()*.5f))
+                        {
+                            if(touch_ended_location.coordinates.x() < canvas_width*.5f + (credits_base->get_width()*.5f) &&
+                               touch_ended_location.coordinates.x() > canvas_width*.5f - (credits_base->get_width()*.5f))
+                            {
+                                oncredits=true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        onhelp   =false;
+                        oncredits=false;
+                    }
 
                     break;
                 }
@@ -118,30 +190,86 @@ namespace example
 
 
                 canvas->fill_rectangle                                                               //TITLE
-                        ({ canvas_width*.5f, canvas_height*.5f + (play_texture->get_height()*2.5f) },
+                        ({ canvas_width*.5f, canvas_height*.75f },
                          {title_texture->get_width(),title_texture->get_height() },
-                         title_texture.get());
+                title_texture.get());
 
-                canvas->fill_rectangle                                                               //PLAY
-                        ({ canvas_width*.5f, canvas_height*.5f + (play_texture->get_height()*.5f) },
-                         {play_texture->get_width(),play_texture->get_height() },
-                         play_texture.get());
 
-                /*canvas->fill_rectangle                                                               //HELP NO FUNCIONA LA TEXTURA HELP
-                        ({ canvas_width*.5f, canvas_height*.5f + (play_texture->get_height()*.5f) },
-                         {help_texture->get_width(),help_texture->get_height() },
-                         help_texture.get());*/
 
-                canvas->fill_rectangle                                                               //CREDITS
-                        ({ canvas_width*.5f, canvas_height*.5f - (play_texture->get_height()*1.5f) },
-                         {credits_texture->get_width(),credits_texture->get_height() },
-                         credits_texture.get());
-
-                canvas->fill_rectangle                                                               //SCORE
-                        ({ canvas_width*.5f, canvas_height*.5f - (play_texture->get_height()*2.5f) },
-                         {score_texture->get_width(),score_texture->get_height() },
-                         score_texture.get());
-
+                if(onhelp)
+                {
+                    canvas->fill_rectangle
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {canvas_width*1.0f,(help->get_height()*(canvas_width/help->get_width())) },
+                             help.get());
+                }
+                else if(oncredits)
+                {
+                    canvas->fill_rectangle
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {canvas_width*1.0f,(help->get_height()*(canvas_width/credits->get_width())) },
+                             credits.get());
+                }
+                else if(bottomover==1)
+                {
+                    canvas->fill_rectangle
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {play_base->get_width(),play_base->get_height() },
+                             play_pressed.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*1.5f) },
+                             {help_base->get_width(),help_base->get_height() },
+                             help_base.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*3) },
+                             {credits_base->get_width(),credits_base->get_height() },
+                             credits_base.get());
+                }
+                else if(bottomover==2)
+                {
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {play_base->get_width(),play_base->get_height() },
+                             play_base.get());
+                    canvas->fill_rectangle
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*1.5f) },
+                             {help_base->get_width(),help_base->get_height() },
+                             help_pressed.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*3) },
+                             {credits_base->get_width(),credits_base->get_height() },
+                             credits_base.get());
+                }
+                else if(bottomover==3)
+                {
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {play_base->get_width(),play_base->get_height() },
+                             play_base.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*1.5f) },
+                             {help_base->get_width(),help_base->get_height() },
+                             help_base.get());
+                    canvas->fill_rectangle
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*3) },
+                             {credits_base->get_width(),credits_base->get_height() },
+                             credits_pressed.get());
+                }
+                else if(bottomover==0)
+                {
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, canvas_height*.5f },
+                             {play_base->get_width(),play_base->get_height() },
+                             play_base.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*1.5f) },
+                             {help_base->get_width(),help_base->get_height() },
+                             help_base.get());
+                    canvas->fill_rectangle                                                               //TITLE
+                            ({ canvas_width*.5f, (canvas_height*.5f - play_base->get_height()*3) },
+                             {credits_base->get_width(),credits_base->get_height() },
+                             credits_base.get());
+                }
 
             }
         }
@@ -156,19 +284,34 @@ namespace example
              if (context)
              {
                 // Se cargan las texturas
-                 bg_texture      = Texture_2D::create (ID(test), context, "menu-scene/menuscene.png");
-                 title_texture   = Texture_2D::create (ID(test), context, "menu-scene/title.png");
-                 credits_texture = Texture_2D::create (ID(test), context, "menu-scene/credits.png");
-                 help_texture    = Texture_2D::create (ID(test), context, "menu-scene/help.png");
-                 play_texture    = Texture_2D::create (ID(test), context, "menu-scene/play.png");
-                 score_texture   = Texture_2D::create (ID(test), context, "menu-scene/score.png");
+                 bg_texture     = Texture_2D::create (ID(bg),       context, "menu-scene/menuscene.png");
+                 title_texture  = Texture_2D::create (ID(title),    context, "menu-scene/title.png");
+                 play_base      = Texture_2D::create (ID(play_b),   context, "menu-scene/play0.png");
+                 play_pressed   = Texture_2D::create (ID(play_p),   context, "menu-scene/play.png");
+                 help_base      = Texture_2D::create (ID(help_b),   context, "menu-scene/help0.png");
+                 help_pressed   = Texture_2D::create (ID(help_p),   context, "menu-scene/help.png");
+                 credits_base   = Texture_2D::create (ID(credit_b), context, "menu-scene/credits0.png");
+                 credits_pressed= Texture_2D::create (ID(credit_p), context, "menu-scene/credits.png");
+                 credits        = Texture_2D::create (ID(credits),  context, "menu-scene/credits1.png");
+                 help           = Texture_2D::create (ID(help),     context, "menu-scene/help1.png");
+
 
                 context->add(bg_texture);
-                context->add(credits_texture);
                 context->add(title_texture);
-                context->add(help_texture);
-                context->add(play_texture);
-                context->add(score_texture);
+                context->add(play_base);
+                context->add(play_pressed);
+                context->add(help_base);
+                context->add(help_pressed);
+                context->add(credits_base);
+                context->add(credits_pressed);
+                context->add(credits);
+                context->add(help);
+
+
+
+                 playpos = canvas_height*.5f;
+                 helppos=canvas_height*.5f - play_base->get_height()*1.5f;
+                 creditspos=canvas_height*.5f - play_base->get_height()*3;
 
                 state = READY;
              }
@@ -177,12 +320,14 @@ namespace example
 
     void Menu_Scene:: run()
     {
-        if(x < canvas_width*.5f+(play_texture->get_width()*.5f) && x > canvas_width+.5f-(play_texture->get_width()*.5f) )
+
+        if(oncredits)
         {
-            if(y >canvas_height*.5f && y < canvas_height*.5f + play_texture->get_height())
-            {
-                director.run_scene (shared_ptr< Scene >(new Game_Scene));
-            }
+            bottomover=0;
+        }
+        else if(onhelp)
+        {
+            bottomover=0;
         }
     }
 

@@ -1,11 +1,11 @@
 /*
  * MENU SCENE
- * Copyright © 2018+ Ángel Rodríguez Ballesteros
+ * Copyright © 2020+ Santiago_Gil_Moya
  *
  * Distributed under the Boost Software License, version  1.0
  * See documents/LICENSE.TXT or www.boost.org/LICENSE_1_0.txt
  *
- * angel.rodriguez@esne.edu
+ * santigil009@gmail.com
  */
 
 #ifndef MENU_SCENE_HEADER
@@ -18,6 +18,9 @@
 #include <basics/Scene>
 #include <basics/Size>
 #include <basics/Timer>
+
+#include "Sprite.hpp"
+
 
 namespace example
 {
@@ -35,47 +38,35 @@ namespace example
 
         typedef std::shared_ptr< basics::Texture_2D > Texture_Handle;
 
-        /**
-         * Representa el estado de la escena en su conjunto.
-         */
+
+        //Estados de la escena
         enum State
         {
             LOADING,
-            READY,
-            FINISHED,
-            ERROR
+            READY
         };
 
-        enum Option_Id
-        {
-            PLAY,
-            SCORES,
-            HELP,
-            CREDITS
-        };
 
-        struct Option
-        {
-            const Atlas::Slice * slice;
-            Point2f position;
-            float   is_pressed;
-        };
-
-        static const unsigned number_of_options = 4;
 
     private:
 
-        State    state;                                     ///< Estado de la escena.
-        bool     suspended;                                 ///< true cuando la escena está en segundo plano y viceversa.
-
-        unsigned canvas_width;                              ///< Ancho de la resolución virtual usada para dibujar.
-        unsigned canvas_height;                             ///< Alto  de la resolución virtual usada para dibujar.
-
-        Timer    timer;                                     ///< Cronómetro usado para medir intervalos de tiempo.
 
 
-        Texture_Handle bg_texture,title_texture,play_texture,score_texture,help_texture,credits_texture;
-        float bg_scale, texture_y_size, bgsize;
+        State    state;                                     //Estado de la escena.
+        bool     suspended;                                 //Determinar si la escena está en segundo plano
+
+        unsigned canvas_width;                              // Ancho de la escena
+        unsigned canvas_height;                             // Alto  de la escena
+
+        Timer    timer;                                     // Cronómetro usado para medir intervalos de tiempo.
+
+        Texture_Handle bg_texture,title_texture;            //Texturas del fondo y titulo
+
+        Texture_Handle play_base,play_pressed,help_base,help_pressed,credits_base,credits_pressed, credits, help; // texturas de los botones
+
+        bool onhelp,oncredits;                              //Determinar si está en submenus
+        byte bottomover;                                    //Determinar el boton que pulsa
+        float playpos,helppos,creditspos;                   //Determinar la posicion de los botones
 
         float x,y;
 
@@ -84,70 +75,37 @@ namespace example
 
         Menu_Scene();
 
-        /**
-         * Este método lo llama Director para conocer la resolución virtual con la que está
-         * trabajando la escena.
-         * @return Tamaño en coordenadas virtuales que está usando la escena.
-         */
+        //Conocer la resolucion
         basics::Size2u get_view_size () override
         {
             return { canvas_width, canvas_height };
         }
 
-        /**
-         * Aquí se inicializan los atributos que deben restablecerse cada vez que se inicia la escena.
-         * @return
-         */
+        //Inicializar valores
         bool initialize () override;
 
-        /**
-         * Este método lo invoca Director automáticamente cuando el juego pasa a segundo plano.
-         */
+        //Cuando pasa a segundo plano
         void suspend () override
         {
             suspended = true;
         }
 
-        /**
-         * Este método lo invoca Director automáticamente cuando el juego pasa a primer plano.
-         */
+        //Cuando vuelve a primer plano
         void resume () override
         {
             suspended = false;
         }
 
-        /**
-         * Este método se invoca automáticamente una vez por fotograma cuando se acumulan
-         * eventos dirigidos a la escena.
-         */
+        //Eventos de pantalla
         void handle (basics::Event & event) override;
 
-        /**
-         * Este método se invoca automáticamente una vez por fotograma para que la escena
-         * actualize su estado.
-         */
+        //Actualiza la escena
         void update (float time) override;
 
-        /**
-         * Este método se invoca automáticamente una vez por fotograma para que la escena
-         * dibuje su contenido.
-         */
+        //Dibuja la escena
         void render (Graphics_Context::Accessor & context) override;
 
     private:
-
-        /**
-         * Establece las propiedades de cada opción si se ha podido cargar el atlas.
-         */
-        void configure_options ();
-
-        /**
-         * Devuelve el índice de la opción que se encuentra bajo el punto indicado.
-         * @param point Punto que se usará para determinar qué opción tiene debajo.
-         * @return Índice de la opción que está debajo del punto o -1 si no hay alguna.
-         */
-        int option_at (const Point2f & point);
-
 
         void load();
         void run();

@@ -28,9 +28,7 @@
         class Intro_Scene : public basics::Scene
         {
 
-            /**
-             * Representa el estado de la escena en su conjunto.
-             */
+            //Estados de la escena
             enum State
             {
                 UNINITIALIZED,
@@ -44,17 +42,17 @@
 
         private:
 
-            State    state;                                     ///< Estado de la escena.
-            bool     suspended;                                 ///< true cuando la escena está en segundo plano y viceversa.
+            State    state;                                     //Estado de la escena.
+            bool     suspended;                                 //Determinar si está en segundo plano
 
-            unsigned canvas_width;                              ///< Ancho de la resolución virtual usada para dibujar.
-            unsigned canvas_height;                             ///< Alto  de la resolución virtual usada para dibujar.
+            unsigned canvas_width;                              //Ancho de la escena
+            unsigned canvas_height;                             //Alto de la escena
 
-            Timer    timer;                                     ///< Cronómetro usado para medir intervalos de tiempo.
+            Timer    timer;                                     //Cronómetro
 
-            float    opacity;                                   ///< Opacidad de la textura.
+            float    opacity;                                   //Opacidad de la textura.
 
-            std::shared_ptr < Texture_2D > logo_texture;        ///< Textura que contiene la imagen del logo.
+            std::shared_ptr < Texture_2D > logo_texture;        //Textura del logo.
 
         public:
 
